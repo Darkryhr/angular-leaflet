@@ -1,6 +1,7 @@
 import { Component, OnInit, AfterViewInit } from '@angular/core';
 import * as L from 'leaflet';
 import { MarkerService } from '../marker.service';
+import { ShapesService } from '../shapes.service';
 
 const iconRetinaUrl = 'assets/marker-icon-2x.png';
 const iconUrl = 'assets/marker-icon.png';
@@ -26,6 +27,52 @@ L.Marker.prototype.options.icon = iconDefault;
 })
 export class MapComponent implements OnInit, AfterViewInit {
   private map;
+  private states;
+
+  private highlightFeature(e) {
+    const layer = e.target;
+
+    layer.setStyle({
+      weight: 6,
+      opacity: 1.0,
+      color: '#14248A',
+      fillOpacity: 1.0,
+      fillColor: '#5998C5',
+    });
+  }
+
+  private resetFeature(e) {
+    const layer = e.target;
+
+    layer.setStyle({
+      weight: 2,
+      opacity: 0.5,
+      color: '#998FC7',
+      fillOpacity: 0.7,
+      fillColor: '#D4C2FC',
+    });
+  }
+
+  private initStatesLayer() {
+    const stateLayer = L.geoJSON(this.states, {
+      style: (feature) => ({
+        weight: 2,
+        opacity: 0.5,
+        color: '#998FC7',
+        fillOpacity: 0.7,
+        fillColor: '#D4C2FC',
+      }),
+      onEachFeature: (feature, layer) => {
+        layer.on({
+          mouseover: (e) => this.highlightFeature(e),
+          mouseout: (e) => this.resetFeature(e),
+        });
+      },
+    });
+
+    this.map.addLayer(stateLayer);
+    stateLayer.bringToBack();
+  }
 
   private initMap(): void {
     this.map = L.map('map', {
@@ -46,7 +93,10 @@ export class MapComponent implements OnInit, AfterViewInit {
     tiles.addTo(this.map);
   }
 
-  constructor(private markerService: MarkerService) {}
+  constructor(
+    private markerService: MarkerService,
+    private shapesService: ShapesService
+  ) {}
 
   ngOnInit(): void {}
 
@@ -54,5 +104,9 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.initMap();
     // this.markerService.makeCapitalMarkers(this.map);
     this.markerService.makeCapitalCircleMarkers(this.map);
+    this.shapesService.getStateShapes().subscribe((states) => {
+      this.states = states;
+      this.initStatesLayer();
+    });
   }
 }
