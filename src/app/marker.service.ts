@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import * as L from 'leaflet';
+import { PopupService } from './popup.service';
 
 @Injectable({
   providedIn: 'root',
@@ -8,7 +9,7 @@ import * as L from 'leaflet';
 export class MarkerService {
   capitals: string = '/assets/data/usa-capitals.geojson';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private popupService: PopupService) {}
 
   static scaledRadius(val: number, maxVal: number): number {
     return 20 * (val / maxVal);
@@ -41,6 +42,10 @@ export class MarkerService {
             maxPop
           ),
         });
+
+        circle.bindPopup(
+          this.popupService.makeCapitalPopup(capital.properties)
+        );
         circle.addTo(map);
       }
     });
